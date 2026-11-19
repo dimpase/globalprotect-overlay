@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=GlobalProtect browser login callback
+Exec=/usr/bin/gpauth auth-callback %u
+MimeType=x-scheme-handler/globalprotectcallback;
+NoDisplay=true
+Terminal=false

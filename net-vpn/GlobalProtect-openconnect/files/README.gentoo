@@ -1,0 +1,40 @@
+This package installs gpclient and gpauth with embedded webview authentication
+disabled. It does not install WebKitGTK, a graphical client, gpservice, or a
+system service. Run the connection when needed; OpenRC is supported.
+
+Authenticate in your desktop browser as your normal user, capturing gpauth's
+JSON output in a private file. Then pass that file to gpclient as root using
+--cookie-on-stdin. Replace vpn.example.org with your organisation's portal.
+
+    gpauth vpn.example.org --browser default
+    gpclient connect vpn.example.org --cookie-on-stdin
+
+These are the underlying commands, not a complete copy-and-paste sequence.
+See the overlay README for secure file-transfer instructions between terminals:
+
+    https://github.com/dimpase/globalprotect-overlay#connect-with-an-external-browser
+
+The JSON output and callback URL contain credentials. Do not display or share
+them, or put them in shell history. Allow the browser to open the supplied
+GlobalProtect browser login callback handler when prompted.
+
+Keep the VPN terminal open. Ctrl+C disconnects; alternatively, in another root
+terminal run:
+
+    gpclient disconnect --wait 5
+
+For automatic external-browser login, authenticate as your desktop user with
+gpauth, then pass its result to gpclient as root using --cookie-on-stdin.
+The supplied hidden desktop entry handles globalprotectcallback URLs.
+
+On OpenRC/dhcpcd systems, net-dns/openresolv coordinates VPN and Wi-Fi DNS.
+If resolvconf reports a signature mismatch, run resolvconf -u as root.
+Disconnect before suspending the laptop; automatic suspend handling is not
+configured by this package.
+
+The package bundles the upstream modified OpenConnect sources because 3.4.0
+uses APIs not provided by the stock Gentoo OpenConnect package. GnuTLS, GMP,
+nettle, libxml2, lz4, p11-kit and zlib are linked from the system. The bundled
+vpnc-script configures and restores routes and DNS for the VPN connection.
+
+Source: https://github.com/yuezk/GlobalProtect-openconnect/releases/tag/v3.4.0
