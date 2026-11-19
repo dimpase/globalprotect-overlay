@@ -2,7 +2,7 @@
 
 These optional Python 3 scripts demonstrate external-browser login as a desktop
 user, followed by a VPN connection from a separate root terminal. They are
-adapted from the helpers used to test this overlay at Northwestern. The ebuild
+adapted from the helpers used to test and use this overlay at Northwestern. The ebuild
 does not install them.
 
 Both use `vpn-connect.northwestern.edu`. For another organisation, change
