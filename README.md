@@ -3,7 +3,8 @@
 A small, unofficial Gentoo overlay for the command-line components of
 [GlobalProtect-openconnect](https://github.com/yuezk/GlobalProtect-openconnect).
 It works with organisation-specific GlobalProtect portals; the package contains
-no Northwestern-specific server or account settings.
+no particular server or account settings (but see examples/ for details of using
+the package with the Duo 2FA).
 
 ## Package
 
