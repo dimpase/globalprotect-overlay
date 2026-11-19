@@ -59,6 +59,11 @@ script's resolved integration instead.
 
 ## Connect with an external browser
 
+For an easier two-terminal workflow, see the optional
+[Northwestern helper scripts](examples/README.md). They detect the desktop UID
+instead of hard-coding a user; their portal can be edited for other organisations.
+The ebuild does not install them. The commands below describe the manual workflow.
+
 Replace `vpn.example.org` with your organisation's portal in both commands below.
 Authentication runs as your desktop user; the tunnel runs as root.
 
@@ -99,8 +104,7 @@ gpclient disconnect --wait 5
 ```
 
 If you abandon authentication before connecting, delete the temporary file and
-directory as your desktop user. The personal `nu-vpn-*` scripts used during
-Northwestern testing are not part of this overlay.
+directory as your desktop user.
 
 ## Status and limitations
 

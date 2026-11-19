@@ -1,0 +1,47 @@
+#!/usr/bin/python3
+"""Consume a desktop user's VPN login result and start the privileged tunnel."""
+import argparse
+import os
+import pwd
+import stat
+import sys
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("username", help="Desktop user who ran nu-vpn-login")
+    args = parser.parse_args()
+    if os.geteuid() != 0:
+        sys.exit("Run nu-vpn-connect in your root terminal after nu-vpn-login succeeds.")
+    try:
+        uid = pwd.getpwnam(args.username).pw_uid
+    except KeyError:
+        parser.error("Unknown desktop username")
+    if uid == 0:
+        parser.error("Specify the non-root desktop user who ran nu-vpn-login")
+    directory = os.open(f"/run/user/{uid}/northwestern-vpn", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        info = os.fstat(directory)
+        if info.st_uid != uid or stat.S_IMODE(info.st_mode) != 0o700:
+            sys.exit("Unexpected VPN credential directory ownership or permissions.")
+        fd = os.open("auth.json", os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != uid or stat.S_IMODE(info.st_mode) != 0o600:
+            os.close(fd)
+            sys.exit("Unexpected VPN credential file ownership or permissions.")
+        os.unlink("auth.json", dir_fd=directory)
+    finally:
+        os.close(directory)
+    os.dup2(fd, 0)
+    if fd != 0:
+        os.close(fd)
+    os.execv("/usr/bin/gpclient", ["gpclient", "connect", "vpn-connect.northwestern.edu", "--cookie-on-stdin"])
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except FileNotFoundError:
+        sys.exit("No saved VPN login found. Run nu-vpn-login as the specified desktop user first.")
+    except OSError as error:
+        sys.exit(f"Cannot start the VPN ({type(error).__name__}).")

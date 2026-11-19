@@ -1,0 +1,57 @@
+#!/usr/bin/python3
+"""Authenticate Northwestern VPN as the desktop user; do not start a tunnel."""
+import json
+import os
+from pathlib import Path
+import pwd
+import shlex
+import stat
+import subprocess
+import sys
+import tempfile
+
+PORTAL = "vpn-connect.northwestern.edu"
+
+
+def check_result(data):
+    value = json.loads(data)
+    return isinstance(value, dict) and isinstance(value.get("success"), dict)
+
+
+def main():
+    uid = os.geteuid()
+    if uid == 0:
+        sys.exit("Run nu-vpn-login as your normal user in your desktop terminal.")
+    username = pwd.getpwuid(uid).pw_name
+    directory = Path(f"/run/user/{uid}/northwestern-vpn")
+    directory.mkdir(mode=0o700, exist_ok=True)
+    info = directory.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != uid or stat.S_IMODE(info.st_mode) != 0o700:
+        sys.exit("The VPN credential directory must belong to the current user with mode 0700.")
+    target = directory / "auth.json"
+    target.unlink(missing_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=".auth-", dir=directory)
+    try:
+        with os.fdopen(fd, "w+b") as output:
+            result = subprocess.run(
+                ["/usr/bin/gpauth", PORTAL, "--browser", "default"], stdout=output
+            )
+            if result.returncode:
+                sys.exit("VPN login failed; no authentication result was saved.")
+            output.seek(0)
+            if not check_result(output.read()):
+                sys.exit("VPN login did not succeed; no authentication result was saved.")
+        os.replace(temporary, target)
+        print("VPN login received. In your root terminal, run:")
+        print(f"  /usr/local/sbin/nu-vpn-connect {shlex.quote(username)}")
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit("VPN login cancelled.")
+    except (OSError, ValueError) as error:
+        sys.exit(f"VPN login could not complete ({type(error).__name__}).")
